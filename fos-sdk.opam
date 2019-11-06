@@ -1,0 +1,41 @@
+opam-version: "1.2"
+version:"0.1"
+maintainer: "gabriele.baldoni@adlinktech.com"
+license: "ELP 2"
+authors:      "Gabriele Baldoni"
+homepage:     "https://fog05.io"
+bug-reports:  "https://github.com/eclipse-fog05/sdk-ocaml/issues/"
+dev-repo:     "https://github.com/eclipse-fog05/sdk-ocaml.git"
+
+build: [
+ [make "atd"]
+ ["dune" "subst"] {pinned}
+ ["dune" "-p" name "-j" jobs]
+]
+
+install: [
+
+  ["dune" "build" "-p" name "@install"]
+  ["dune" "install" name]
+]
+
+depends: [
+  "dune"
+  "cmdliner"
+  "re"
+  "yojson"
+  "logs"
+  "lwt"
+  "lwt_ppx"
+  "logs-syslog"
+  "apero-core"
+  "apero-net"
+  "yaks-common"
+  "yaks-ocaml"
+]
+
+
+synopsis : "Eclipse fog05 OCaml SDK"
+description: """
+Eclipse fog05 OCaml SDK is a collection of OCaml libraries and types used by
+Eclipse fog05 components"""

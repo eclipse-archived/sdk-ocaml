@@ -1,0 +1,11 @@
+language: c
+sudo: required
+install: wget https://raw.githubusercontent.com/ocaml/ocaml-ci-scripts/master/.travis-opam.sh
+script: bash -ex .travis-opam.sh
+env:
+    global:
+    - DEPOPTS="dune cmdliner re yojson log lwt lwt_ppx logs-syslog apero-core apero-net yaks-common yaks-ocaml"
+    - PINS="yaks:. fos-sdk:. yask-common:https://github.com/atolab/yaks-common.git yask-ocaml:https://github.com/atolab/yaks-ocaml.git apero-core:https://github.com/atolab/apero-core.git apero-net:https://github.com/atolab/apero.git"
+    - PACKAGE=yaks
+    matrix:
+    - OCAML_VERSION=4.07.1
