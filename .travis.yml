@@ -8,7 +8,7 @@ install: bash -ex .travis-opam.sh
 env:
     global:
     - DEPOPTS="atdgen ocp-ocamlres conf-libev"
-    - PINS="fos-sdk:. apero-core:git@github.com:atolab/apero.git#c36dee5 apero-net:git@github.com:atolab/apero.git#824c954 apero-time:git@github.com:atolab/apero-time.git#b0446b7 zenoh:git@github.com:atolab/zenoh.git#46d4378 yaks-common:git@github.com:atolab/zenoh.git#5d2e70d yaks-ocaml:git@:github.com/atolab/zenoh.git#d076645"
+    - PINS="fos-sdk:. apero-core:git@github.com:atolab/apero-core.git#c36dee5 dynload-sys:git@github.com:atolab/apero-core.git#c36dee5 apero-net:git@github.com:atolab/apero-net.git#824c954 apero-time:git@github.com:atolab/apero-time.git#b0446b7 zenoh-proto:git@github.com:atolab/zenoh.git#46d4378 zenoh-ocaml:git@github.com:atolab/zenoh.git#46d4378 yaks-common:git@github.com:atolab/yask-common.git#5d2e70d yaks-ocaml:git@github.com:atolab/yaks-ocaml.git#d076645"
     - PACKAGE=fos-sdk
     matrix:
     - OCAML_VERSION=4.07
