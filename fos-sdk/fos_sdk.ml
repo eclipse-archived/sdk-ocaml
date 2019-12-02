@@ -79,7 +79,7 @@ let string_of_hv_type (kind:Infra_fdu.hv_kind) =
   | `KVM | `KVM_UK -> "kvm"
   | `XEN | `XEN_UK -> "xen"
   | `LXD -> "lxd"
-  | `DOCKER -> "dock"
+  | `DOCKER -> "docker"
   | `MCU -> "mcu"
 
 let hv_type_of_string hv =
@@ -88,7 +88,7 @@ let hv_type_of_string hv =
   | "kvm" -> `KVM
   | "xen" -> `XEN
   | "lxd" -> `LXD
-  | "dock" -> `DOCKER
+  | "docker" -> `DOCKER
   | "mcu" -> `MCU
   | _ -> raise @@ Errors.FException (`InformationModelError (`Msg ( Printf.sprintf "Hypervisor %s not recognized" hv)))
 
