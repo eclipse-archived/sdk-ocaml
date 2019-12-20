@@ -1,9 +1,15 @@
 language: c
 sudo: required
-before_install:
+install:
  - sudo apt update -qq
  - sudo apt install libev-dev libssl-dev m4 pkg-config rsync unzip -y
  - wget https://raw.githubusercontent.com/ocaml/ocaml-ci-scripts/master/.travis-opam.sh
-install: bash -ex .travis-opam.sh
+script: bash -ex .travis-opam.sh
 env:
-    - OCAML_VERSION=4.07 EXTRA_DEPS="atdgen ocp-ocamlres conf-libev" PINS="fos-sdk:. apero-core:https://github.com/atolab/apero-core.git#c36dee5 dynload-sys:https://github.com/atolab/apero-core.git#c36dee5 apero-net:https://github.com/atolab/apero-net.git#824c954 apero-time:https://github.com/atolab/apero-time.git#b0446b7 zenoh-proto:https://github.com/atolab/zenoh.git#46d4378 zenoh-ocaml:https://github.com/atolab/zenoh.git#46d4378 yaks-common:https://github.com/atolab/yaks-common.git#5d2e70d yaks-ocaml:https://github.com/atolab/yaks-ocaml.git#d076645" PACKAGE=fos-sdk
+    global:
+    - PRE_INSTALL_HOOK="opam install atdgen ocp-ocamlres conf-libev -y"
+    # - EXTRA_DEPS="atdgen ocp-ocamlres conf-libev"
+    - PINS="fos-sdk:. apero-core:https://github.com/atolab/apero-core.git#0.4.5 dynload-sys:https://github.com/atolab/apero-core.git#0.4.5 apero-net:https://github.com/atolab/apero-net.git#0.4.5 apero-time:https://github.com/atolab/apero-time.git#0.4.5 zenoh-proto:https://github.com/atolab/zenoh.git#0.3.0 zenoh-ocaml:https://github.com/atolab/zenoh.git#0.3.0 yaks-common:https://github.com/atolab/yaks-common.git#0.3.0 yaks-ocaml:https://github.com/atolab/yaks-ocaml.git#0.3.0"
+    - PACKAGE=fos-sdk
+    matrix:
+    - OCAML_VERSION=4.07
