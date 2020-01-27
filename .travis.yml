@@ -12,4 +12,4 @@ env:
     - PINS="fos-sdk:. apero-core:https://github.com/atolab/apero-core.git#0.4.6 dynload-sys:https://github.com/atolab/apero-core.git#0.4.6 apero-net:https://github.com/atolab/apero-net.git#0.4.6 apero-time:https://github.com/atolab/apero-time.git#0.4.6 zenoh-proto:https://github.com/atolab/zenoh.git#0.3.0 zenoh-ocaml:https://github.com/atolab/zenoh.git#0.3.0 yaks-common:https://github.com/atolab/yaks-common.git#0.3.0 yaks-ocaml:https://github.com/atolab/yaks-ocaml.git#0.3.0"
     - PACKAGE=fos-sdk
     matrix:
-    - OCAML_VERSION=4.07
+    - OCAML_VERSION=4.09
