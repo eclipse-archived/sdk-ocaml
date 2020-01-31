@@ -9,7 +9,7 @@ env:
     global:
     - PRE_INSTALL_HOOK="opam install atdgen ocp-ocamlres conf-libev -y"
     # - EXTRA_DEPS="atdgen ocp-ocamlres conf-libev"
-    - PINS="fos-sdk:. apero-core:https://github.com/atolab/apero-core.git#0.4.5 dynload-sys:https://github.com/atolab/apero-core.git#0.4.5 apero-net:https://github.com/atolab/apero-net.git#0.4.5 apero-time:https://github.com/atolab/apero-time.git#0.4.5 zenoh-proto:https://github.com/atolab/zenoh.git#0.3.0 zenoh-ocaml:https://github.com/atolab/zenoh.git#0.3.0 yaks-common:https://github.com/atolab/yaks-common.git#0.3.0 yaks-ocaml:https://github.com/atolab/yaks-ocaml.git#0.3.0"
+    - PINS="fos-sdk:. apero-core:https://github.com/atolab/apero-core.git#0.4.6 dynload-sys:https://github.com/atolab/apero-core.git#0.4.6 apero-net:https://github.com/atolab/apero-net.git#0.4.6 apero-time:https://github.com/atolab/apero-time.git#0.4.6 zenoh-proto:https://github.com/atolab/zenoh.git#0.3.0 zenoh-ocaml:https://github.com/atolab/zenoh.git#0.3.0 yaks-common:https://github.com/atolab/yaks-common.git#0.3.0 yaks-ocaml:https://github.com/atolab/yaks-ocaml.git#0.3.0"
     - PACKAGE=fos-sdk
     matrix:
-    - OCAML_VERSION=4.07
+    - OCAML_VERSION=4.09
