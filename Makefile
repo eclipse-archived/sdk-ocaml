@@ -68,6 +68,6 @@ clean:
 
 
 install:
-	opam install . --working-dir
+	opam install . --working-dir -y
 uninstall:
 	opam remove fos-sdk
