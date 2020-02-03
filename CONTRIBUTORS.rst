@@ -8,5 +8,6 @@ These are the contributors to fog05 according to the Github repository.
  GHsername        Name
  ===============  ==================================
  gabrik           Gabriele Baldoni (ADLINK)
+ gabrielepmattia  Gabriele Proietti Mattia
  ===============  ==================================
 
