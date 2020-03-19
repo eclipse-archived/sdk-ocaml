@@ -80,6 +80,7 @@ type hv_kind = [
   | LXD
   | DOCKER
   | MCU
+  | ROS2
 ]
 
 type conf_types = [
