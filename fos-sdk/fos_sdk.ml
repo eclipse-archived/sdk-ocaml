@@ -81,6 +81,7 @@ let string_of_hv_type (kind:Infra_fdu.hv_kind) =
   | `LXD -> "lxd"
   | `DOCKER -> "docker"
   | `MCU -> "mcu"
+  | `ROS2 -> "ros2"
 
 let hv_type_of_string hv =
   match hv with
@@ -90,6 +91,7 @@ let hv_type_of_string hv =
   | "lxd" -> `LXD
   | "docker" -> `DOCKER
   | "mcu" -> `MCU
+  | "ros2" -> `ROS2
   | _ -> raise @@ Errors.FException (`InformationModelError (`Msg ( Printf.sprintf "Hypervisor %s not recognized" hv)))
 
 
