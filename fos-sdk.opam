@@ -1,5 +1,5 @@
 opam-version: "1.2"
-version:"0.1"
+version:"0.2.0"
 maintainer: "gabriele.baldoni@adlinktech.com"
 license: "ELP 2"
 authors:      "Gabriele Baldoni"
@@ -25,7 +25,7 @@ depends: [
   "re" {= "1.9.0"}
   "yojson" {= "1.7.0"}
   "logs" {= "0.7.0"}
-  "lwt" {= "4.5.0"}
+  "lwt" {= "5.1.1"}
   "lwt_ppx" {= "2.0.0"}
   "atdgen" {= "2.0.0"}
   "logs-syslog" {= "0.2.1"}
