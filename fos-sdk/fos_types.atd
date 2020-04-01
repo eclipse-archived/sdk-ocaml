@@ -348,6 +348,7 @@ type neighbor = {
 type ping_info = {
   peer : string;
   average : float;
+  ip : string;
   packet_loss : float;
   packet_sent : int;
   packet_received: int;

@@ -175,6 +175,12 @@ module MakeGAD(P: sig val prefix: string end) = struct
   let get_node_status_path sysid tenantid nodeid =
     create_path [P.prefix; sysid; "tenants"; tenantid; "nodes"; nodeid; "status"]
 
+  let get_node_neighbors_selector sysid tenantid nodeid =
+    create_selector [P.prefix; sysid; "tenants"; tenantid; "nodes"; nodeid; "neighbors"; "*"]
+
+  let get_node_neighbor_path sysid tenantid nodeid neighbor_id =
+    create_path [P.prefix; sysid; "tenants"; tenantid; "nodes"; nodeid; "neighbors"; neighbor_id]
+
   let get_node_plugins_selector sysid tenantid nodeid =
     create_selector [P.prefix; sysid; "tenants"; tenantid; "nodes"; nodeid; "plugins"; "*"; "info"]
 
@@ -552,6 +558,41 @@ module MakeGAD(P: sig val prefix: string end) = struct
   let remove_node_status sysid tenantid nodeid connector =
     MVar.read connector >>= fun connector ->
     let p = get_node_status_path sysid tenantid nodeid in
+    Yaks.Workspace.remove p connector.ws
+
+
+  let get_node_neighbor sysid tenantid nodeid neighbor_id connector =
+    MVar.read connector >>= fun connector ->
+    let s = Yaks.Selector.of_path @@ get_node_neighbor_path sysid tenantid nodeid neighbor_id in
+    Yaks.Workspace.get s connector.ws
+    >>= fun res ->
+    match res with
+    | [] -> Lwt.return None
+    | _ ->
+      let _,v = (List.hd res) in
+      try
+        Lwt.return @@ Some (FTypes.ping_info_of_string (Yaks.Value.to_string v))
+      with
+      | Atdgen_runtime.Oj_run.Error _ | Yojson.Json_error _ ->
+        Lwt.fail @@ FException (`InternalError (`Msg ("Value is not well formatted in get_node_neighbor") ))
+
+  let observe_node_neighbors sysid tenantid nodeid callback connector =
+    MVar.guarded connector @@ fun connector ->
+    let s = get_node_neighbors_selector sysid tenantid nodeid in
+    let%lwt subid = Yaks.Workspace.subscribe ~listener:(sub_cb callback FTypes.ping_info_of_string extract_nodeid_from_path) s connector.ws in
+    let ls = List.append connector.listeners [subid] in
+    MVar.return subid {connector with listeners = ls}
+
+
+  let add_node_neighbor sysid tenantid nodeid neighbor_id ping_info connector =
+    MVar.read connector >>= fun connector ->
+    let p = get_node_neighbor_path sysid tenantid nodeid neighbor_id in
+    let value = Yaks.Value.StringValue (FTypes.string_of_ping_info ping_info )in
+    Yaks.Workspace.put p value connector.ws
+
+  let remove_node_neighbor sysid tenantid nodeid neighbor_id connector =
+    MVar.read connector >>= fun connector ->
+    let p = get_node_neighbor_path sysid tenantid nodeid neighbor_id in
     Yaks.Workspace.remove p connector.ws
 
   let add_node_configuration sysid tenantid nodeid nodeconf connector =
