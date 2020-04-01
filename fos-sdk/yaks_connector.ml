@@ -526,6 +526,13 @@ module MakeGAD(P: sig val prefix: string end) = struct
     let value = Yaks.Value.StringValue (FTypes.string_of_node_info nodeinfo )in
     Yaks.Workspace.put p value connector.ws
 
+  let observe_nodes sysid tenantid callback connector =
+    MVar.guarded connector @@ fun connector ->
+    let s = get_all_nodes_selector sysid tenantid in
+    let%lwt subid = Yaks.Workspace.subscribe ~listener:(sub_cb callback FTypes.node_info_of_string extract_nodeid_from_path) s connector.ws in
+    let ls = List.append connector.listeners [subid] in
+    MVar.return subid {connector with listeners = ls}
+
   let get_node_status sysid tenantid nodeid connector =
     MVar.read connector >>= fun connector ->
     let s = Yaks.Selector.of_path @@ get_node_status_path sysid tenantid nodeid in
