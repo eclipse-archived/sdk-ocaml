@@ -176,10 +176,13 @@ module MakeGAD(P: sig val prefix: string end) = struct
     create_path [P.prefix; sysid; "tenants"; tenantid; "nodes"; nodeid; "status"]
 
   let get_node_neighbors_selector sysid tenantid nodeid =
-    create_selector [P.prefix; sysid; "tenants"; tenantid; "nodes"; nodeid; "neighbors"; "*"]
+    create_selector [P.prefix; sysid; "tenants"; tenantid; "nodes"; nodeid; "neighbors"; "*"; "iface"; "*"]
 
   let get_node_neighbor_path sysid tenantid nodeid neighbor_id =
-    create_path [P.prefix; sysid; "tenants"; tenantid; "nodes"; nodeid; "neighbors"; neighbor_id]
+    create_path [P.prefix; sysid; "tenants"; tenantid; "nodes"; nodeid; "neighbors"; neighbor_id; "iface"; "*"]
+
+  let get_node_neighbor_face_path sysid tenantid nodeid neighbor_id iface=
+    create_path [P.prefix; sysid; "tenants"; tenantid; "nodes"; nodeid; "neighbors"; neighbor_id; "iface"; iface]
 
   let get_node_plugins_selector sysid tenantid nodeid =
     create_selector [P.prefix; sysid; "tenants"; tenantid; "nodes"; nodeid; "plugins"; "*"; "info"]
@@ -574,14 +577,18 @@ module MakeGAD(P: sig val prefix: string end) = struct
     Yaks.Workspace.get s connector.ws
     >>= fun res ->
     match res with
-    | [] -> Lwt.return None
-    | _ ->
-      let _,v = (List.hd res) in
-      try
-        Lwt.return @@ Some (FTypes.ping_info_of_string (Yaks.Value.to_string v))
-      with
-      | Atdgen_runtime.Oj_run.Error _ | Yojson.Json_error _ ->
-        Lwt.fail @@ FException (`InternalError (`Msg ("Value is not well formatted in get_node_neighbor") ))
+    | [] -> Lwt.return []
+    | l ->
+      Lwt_list.map_p(
+        fun e ->
+        let _,v = e in
+        try
+          Lwt.return (FTypes.ping_info_of_string (Yaks.Value.to_string v))
+        with
+        | Atdgen_runtime.Oj_run.Error _ | Yojson.Json_error _ ->
+          Lwt.fail @@ FException (`InternalError (`Msg ("Value is not well formatted in get_node_neighbor") ))
+      ) l
+
 
   let observe_node_neighbors sysid tenantid nodeid callback connector =
     MVar.guarded connector @@ fun connector ->
@@ -591,15 +598,15 @@ module MakeGAD(P: sig val prefix: string end) = struct
     MVar.return subid {connector with listeners = ls}
 
 
-  let add_node_neighbor sysid tenantid nodeid neighbor_id ping_info connector =
+  let add_node_neighbor sysid tenantid nodeid neighbor_id iface ping_info connector =
     MVar.read connector >>= fun connector ->
-    let p = get_node_neighbor_path sysid tenantid nodeid neighbor_id in
+    let p = get_node_neighbor_face_path sysid tenantid nodeid neighbor_id iface in
     let value = Yaks.Value.StringValue (FTypes.string_of_ping_info ping_info )in
     Yaks.Workspace.put p value connector.ws
 
-  let remove_node_neighbor sysid tenantid nodeid neighbor_id connector =
+  let remove_node_neighbor sysid tenantid nodeid neighbor_id iface connector =
     MVar.read connector >>= fun connector ->
-    let p = get_node_neighbor_path sysid tenantid nodeid neighbor_id in
+    let p = get_node_neighbor_face_path sysid tenantid nodeid neighbor_id iface in
     Yaks.Workspace.remove p connector.ws
 
   let add_node_configuration sysid tenantid nodeid nodeconf connector =
