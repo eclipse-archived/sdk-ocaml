@@ -349,6 +349,7 @@ type ping_info = {
   peer : string;
   average : float;
   ip : string;
+  iface : string;
   packet_loss : float;
   packet_sent : int;
   packet_received: int;
