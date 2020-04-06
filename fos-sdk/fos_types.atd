@@ -358,6 +358,11 @@ type ping_info = {
 }
 
 
+
+type heartbeat_info = {
+  nodeid : string;
+}
+
 (* PLUGINS INFO*)
 
 type plugins_info_type = {

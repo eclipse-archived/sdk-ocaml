@@ -732,52 +732,6 @@ module MakeGAD(P: sig val prefix: string end) = struct
     let ls = List.append connector.listeners [subid] in
     MVar.return subid {connector with listeners = ls}
 
-  let get_catalog_all_atomic_entities sysid tenantid connector =
-    MVar.read connector >>= fun connector ->
-    let s = get_catalog_all_atomic_entity_selector sysid tenantid in
-    Yaks.Workspace.get s  connector.ws
-    >>= fun res ->
-    match res with
-    | [] ->
-      Lwt.return []
-    | _ ->
-      Lwt.return @@ List.map (fun (k,_) -> extract_aeid_from_path k) res
-
-  let get_catalog_atomic_entity_info sysid tenantid aeid connector =
-    MVar.read connector >>= fun connector ->
-    let s = Yaks.Selector.of_path @@ get_catalog_atomic_entity_info_path sysid tenantid aeid in
-    Yaks.Workspace.get s connector.ws
-    >>= fun res ->
-    match res with
-    | [] -> Lwt.return None
-    | _ ->
-      let _,v = (List.hd res) in
-      try
-        Lwt.return @@ Some (User.Descriptors.AtomicEntity.descriptor_of_string (Yaks.Value.to_string v))
-      with
-      | Atdgen_runtime.Oj_run.Error _ | Yojson.Json_error _ ->
-        Lwt.fail @@ FException (`InternalError (`Msg ("Value is not well formatted in get_fdu_info") ))
-      | exn -> Lwt.fail exn
-
-  let add_catalog_atomic_entity_info sysid tenantid aeid aeinfo connector =
-    MVar.read connector >>= fun connector ->
-    let p = get_catalog_atomic_entity_info_path sysid tenantid aeid in
-    let value = Yaks.Value.StringValue (User.Descriptors.AtomicEntity.string_of_descriptor aeinfo )in
-    Yaks.Workspace.put p value connector.ws
-
-  let remove_catalog_atomic_entity_info sysid tenantid aeid connector =
-    MVar.read connector >>= fun connector ->
-    let p = get_catalog_atomic_entity_info_path sysid tenantid aeid in
-    Yaks.Workspace.remove p connector.ws
-
-  let observe_catalog_atomic_entities sysid tenantid callback connector =
-    MVar.guarded connector @@ fun connector ->
-    let s = get_catalog_all_atomic_entity_selector sysid tenantid in
-    let%lwt subid = Yaks.Workspace.subscribe ~listener:(sub_cb callback User.Descriptors.AtomicEntity.descriptor_of_string extract_aeid_from_path) s connector.ws in
-    let ls = List.append connector.listeners [subid] in
-    MVar.return subid {connector with listeners = ls}
-
-
   let get_catalog_all_fdus sysid tenantid connector =
     MVar.read connector >>= fun connector ->
     let s = get_catalog_all_fdu_selector sysid tenantid in
@@ -825,62 +779,6 @@ module MakeGAD(P: sig val prefix: string end) = struct
 
 
   (* Record  *)
-
-  let get_records_all_atomic_entities_instances sysid tenantid connector =
-    MVar.read connector >>= fun connector ->
-    let s = get_records_all_atomic_entities_instance_selector sysid tenantid in
-    Yaks.Workspace.get s  connector.ws
-    >>= fun res ->
-    match res with
-    | [] ->
-      Lwt.return []
-    | _ ->
-      Lwt.return @@ List.map (fun (k,_) -> (extract_aeid_from_path k, extract_aeid_instanceid_from_path k)) res
-
-  let get_records_all_atomic_entity_instances sysid tenantid aeid connector =
-    MVar.read connector >>= fun connector ->
-    let s = get_records_all_atomic_entity_instance_selector sysid tenantid aeid in
-    Yaks.Workspace.get s  connector.ws
-    >>= fun res ->
-    match res with
-    | [] ->
-      Lwt.return []
-    | _ ->
-      Lwt.return @@ List.map (fun (k,_) -> extract_aeid_instanceid_from_path k) res
-
-  let get_records_atomic_entity_instance_info sysid tenantid aeid instanceid connector =
-    MVar.read connector >>= fun connector ->
-    let s = get_records_atomic_entity_instance_info_path sysid tenantid aeid instanceid in
-    Yaks.Workspace.get s connector.ws
-    >>= fun res ->
-    match res with
-    | [] -> Lwt.return None
-    | _ ->
-      let _,v = (List.hd res) in
-      try
-        Lwt.return @@ Some (Infra.Descriptors.AtomicEntity.record_of_string (Yaks.Value.to_string v))
-      with
-      | Atdgen_runtime.Oj_run.Error _ | Yojson.Json_error _ ->
-        Lwt.fail @@ FException (`InternalError (`Msg ("Value is not well formatted in get_fdu_info") ))
-      | exn -> Lwt.fail exn
-
-  let add_records_atomic_entity_instance_info sysid tenantid aeid instanceid aeinfo connector =
-    MVar.read connector >>= fun connector ->
-    let p = Yaks.Path.of_string @@ Yaks.Selector.path @@  get_records_atomic_entity_instance_info_path sysid tenantid aeid instanceid  in
-    let value = Yaks.Value.StringValue (Infra.Descriptors.AtomicEntity.string_of_record aeinfo )in
-    Yaks.Workspace.put p value connector.ws
-
-  let remove_records_atomic_entity_instance_info sysid tenantid aeid instanceid connector =
-    MVar.read connector >>= fun connector ->
-    let p = Yaks.Path.of_string @@  Yaks.Selector.path @@ get_records_atomic_entity_instance_info_path sysid tenantid aeid instanceid in
-    Yaks.Workspace.remove p connector.ws
-
-  let observe_records_atomic_entities_instances sysid tenantid callback connector =
-    MVar.guarded connector @@ fun connector ->
-    let s = get_records_all_atomic_entities_instance_selector sysid tenantid in
-    let%lwt subid = Yaks.Workspace.subscribe ~listener:(sub_cb callback Infra.Descriptors.AtomicEntity.record_of_string extract_aeid_instanceid_from_path) s connector.ws in
-    let ls = List.append connector.listeners [subid] in
-    MVar.return subid {connector with listeners = ls}
 
   let get_records_all_entities_instances sysid tenantid connector =
     MVar.read connector >>= fun connector ->
@@ -1543,52 +1441,6 @@ module MakeGAD(P: sig val prefix: string end) = struct
     | (_,v)::_ ->
       Lwt.return (Agent_types.eval_result_of_string (Yaks.Value.to_string v))
 
-  (* Atomic Entity Eval *)
-
-  let onboard_ae_from_node sysid tenantid nodeid ae_info connector =
-    MVar.read connector >>= fun connector ->
-    let fname = "onboard_ae" in
-    let params = [("descriptor",User.Descriptors.AtomicEntity.string_of_descriptor ae_info)] in
-    let s = get_agent_exec_path_with_params sysid tenantid nodeid fname params in
-    let%lwt res = Yaks.Workspace.get s connector.ws in
-    match res with
-    | [] ->  Lwt.fail @@ FException (`InternalError (`Msg ("Empty value for agent_eval") ))
-    | (_,v)::_ ->
-      Lwt.return (Agent_types.eval_result_of_string (Yaks.Value.to_string v))
-
-  let instantiate_ae_from_node sysid tenantid nodeid ae_id connector =
-    MVar.read connector >>= fun connector ->
-    let fname = "instantiate_ae" in
-    let params = [("ae_id",ae_id)] in
-    let s = get_agent_exec_path_with_params sysid tenantid nodeid fname params in
-    let%lwt res = Yaks.Workspace.get s connector.ws in
-    match res with
-    | [] ->  Lwt.fail @@ FException (`InternalError (`Msg ("Empty value for agent_eval") ))
-    | (_,v)::_ ->
-      Lwt.return (Agent_types.eval_result_of_string (Yaks.Value.to_string v))
-
-  let offload_ae_from_node sysid tenantid nodeid ae_id connector =
-    MVar.read connector >>= fun connector ->
-    let fname = "offload_ae" in
-    let params = [("ae_id",ae_id)] in
-    let s = get_agent_exec_path_with_params sysid tenantid nodeid fname params in
-    let%lwt res = Yaks.Workspace.get s connector.ws in
-    match res with
-    | [] ->  Lwt.fail @@ FException (`InternalError (`Msg ("Empty value for agent_eval") ))
-    | (_,v)::_ ->
-      Lwt.return (Agent_types.eval_result_of_string (Yaks.Value.to_string v))
-
-  let terminate_ae_from_node sysid tenantid nodeid ae_inst_id connector =
-    MVar.read connector >>= fun connector ->
-    let fname = "terminate_ae" in
-    let params = [("instance_id",ae_inst_id)] in
-    let s = get_agent_exec_path_with_params sysid tenantid nodeid fname params in
-    let%lwt res = Yaks.Workspace.get s connector.ws in
-    match res with
-    | [] ->  Lwt.fail @@ FException (`InternalError (`Msg ("Empty value for agent_eval") ))
-    | (_,v)::_ ->
-      Lwt.return (Agent_types.eval_result_of_string (Yaks.Value.to_string v))
-
   (* Entity Eval *)
 
   let onboard_entity_from_node sysid tenantid nodeid ae_info connector =
@@ -1805,6 +1657,21 @@ module MakeGAD(P: sig val prefix: string end) = struct
     let%lwt res = Yaks.Workspace.get s connector.ws in
     match res with
     | [] ->  Lwt.fail @@ FException (`InternalError (`Msg ("Empty value for agent_eval") ))
+    | (_,v)::_ ->
+      Lwt.return (Agent_types.eval_result_of_string (Yaks.Value.to_string v))
+
+
+  (* Hearbeat Eval *)
+  let send_heartbeat sysid tenantid nodeid source_id connector =
+    MVar.read connector >>= fun connector ->
+    let fname = "heartbeat" in
+    let params = [("node_id", source_id)] in
+    let s = get_agent_exec_path_with_params sysid tenantid nodeid fname params in
+    let yres = Yaks.Workspace.get s connector.ws in
+    let timeout =  Lwt_unix.sleep 2.0 >>= fun  _ -> Lwt.return [] in
+    let%lwt res = Lwt.pick [yres;timeout] in
+    match res with
+    | [] ->  Lwt.fail @@ FException (`InternalError (`Msg ("Empty value for agent_eval or timeout") ))
     | (_,v)::_ ->
       Lwt.return (Agent_types.eval_result_of_string (Yaks.Value.to_string v))
 
