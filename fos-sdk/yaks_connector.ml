@@ -1492,6 +1492,34 @@ module MakeGAD(P: sig val prefix: string end) = struct
     let ls = List.append connector.evals [p] in
     MVar.return Lwt.return_unit {connector with evals = ls}
 
+   let remove_fdu_run_eval sysid tenantid nodeid fduid instanceid connector =
+    MVar.guarded connector @@ fun connector ->
+    let p = get_fdu_run_eval_path sysid tenantid nodeid fduid instanceid in
+    let%lwt _ = Yaks.Workspace.unregister_eval p connector.ws in
+    let ls = List.filter (fun e -> e != p ) connector.evals  in
+    MVar.return Lwt.return_unit {connector with evals = ls}
+
+  let remove_fdu_log_eval sysid tenantid nodeid fduid instanceid connector =
+    MVar.guarded connector @@ fun connector ->
+    let p = get_fdu_log_eval_path sysid tenantid nodeid fduid instanceid in
+    let%lwt _ = Yaks.Workspace.unregister_eval p connector.ws in
+    let ls = List.filter (fun e -> e != p ) connector.evals  in
+    MVar.return Lwt.return_unit {connector with evals = ls}
+
+  let remove_fdu_ls_eval sysid tenantid nodeid fduid instanceid connector =
+    MVar.guarded connector @@ fun connector ->
+    let p = get_fdu_ls_eval_path sysid tenantid nodeid fduid instanceid in
+   let%lwt _ = Yaks.Workspace.unregister_eval p connector.ws in
+    let ls = List.filter (fun e -> e != p ) connector.evals  in
+    MVar.return Lwt.return_unit {connector with evals = ls}
+
+  let remove_fdu_file_eval sysid tenantid nodeid fduid instanceid connector =
+    MVar.guarded connector @@ fun connector ->
+    let p = get_fdu_file_eval_path sysid tenantid nodeid fduid instanceid in
+    let%lwt _ = Yaks.Workspace.unregister_eval p connector.ws in
+    let ls = List.filter (fun e -> e != p ) connector.evals  in
+    MVar.return Lwt.return_unit {connector with evals = ls}
+
   (* FDU Eval *)
 
   let onboard_fdu_from_node sysid tenantid nodeid fdu_info connector =
