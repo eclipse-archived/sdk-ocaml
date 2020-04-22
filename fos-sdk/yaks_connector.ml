@@ -1449,7 +1449,7 @@ module MakeGAD(P: sig val prefix: string end) = struct
     MVar.guarded connector @@ fun connector ->
     let p = get_fdu_run_eval_path sysid tenantid nodeid fduid instanceid in
     let cb _ _ =
-      let%lwt r = func in
+      let%lwt r = func () in
       Lwt.return @@ Yaks.Value.StringValue r
     in
     let%lwt _ = Yaks.Workspace.register_eval p cb connector.ws in
@@ -1460,7 +1460,7 @@ module MakeGAD(P: sig val prefix: string end) = struct
     MVar.guarded connector @@ fun connector ->
     let p = get_fdu_log_eval_path sysid tenantid nodeid fduid instanceid in
     let cb _ _ =
-      let%lwt r = func in
+      let%lwt r = func () in
       Lwt.return @@ Yaks.Value.StringValue r
     in
     let%lwt _ = Yaks.Workspace.register_eval p cb connector.ws in
@@ -1471,7 +1471,7 @@ module MakeGAD(P: sig val prefix: string end) = struct
     MVar.guarded connector @@ fun connector ->
     let p = get_fdu_ls_eval_path sysid tenantid nodeid fduid instanceid in
     let cb _ _ =
-      let%lwt r = func in
+      let%lwt r = func () in
       Lwt.return @@ Yaks.Value.StringValue r
     in
     let%lwt _ = Yaks.Workspace.register_eval p cb connector.ws in
