@@ -213,9 +213,13 @@ module MakeGAD(P: sig val prefix: string end) = struct
   let get_fdu_instance_selector sysid tenantid instanceid =
     create_selector [P.prefix; sysid; "tenants"; tenantid; "nodes"; "*"; "fdu"; "*"; "instances"; instanceid; "info"]
 
-  let get_fdu_run_eval_selector sysid tenantid instanceid =
-    (* may add env variables as parameter for the eval *)
-    create_selector [P.prefix; sysid; "tenants"; tenantid; "nodes"; "*"; "fdu"; "*"; "instances"; instanceid; "run"]
+  let get_fdu_start_eval_selector sysid tenantid instanceid env =
+    let e = Printf.sprintf "?(env=%s)" env in
+    create_selector [P.prefix; sysid; "tenants"; tenantid; "nodes"; "*"; "fdu"; "*"; "instances"; instanceid; "start"; e]
+
+  let get_fdu_run_eval_selector sysid tenantid instanceid env =
+    let e = Printf.sprintf "?(env=%s)" env in
+    create_selector [P.prefix; sysid; "tenants"; tenantid; "nodes"; "*"; "fdu"; "*"; "instances"; instanceid; "run"; e]
 
   let get_fdu_log_eval_selector sysid tenantid instanceid =
     create_selector [P.prefix; sysid; "tenants"; tenantid; "nodes"; "*"; "fdu"; "*"; "instances"; instanceid; "log"]
@@ -226,6 +230,9 @@ module MakeGAD(P: sig val prefix: string end) = struct
   let get_fdu_file_eval_selector sysid tenantid instanceid filename =
     let f = Printf.sprintf "?(filename=%s)" filename in
     create_selector [P.prefix; sysid; "tenants"; tenantid; "nodes"; "*"; "fdu"; "*"; "instances"; instanceid; "get"; f]
+
+  let get_fdu_start_eval_path sysid tenantid nodeid fduid instanceid =
+    create_path [P.prefix; sysid; "tenants"; tenantid; "nodes"; nodeid; "fdu"; fduid; "instances"; instanceid; "start"]
 
   let get_fdu_run_eval_path sysid tenantid nodeid fduid instanceid =
     create_path [P.prefix; sysid; "tenants"; tenantid; "nodes"; nodeid; "fdu"; fduid; "instances"; instanceid; "run"]
@@ -1445,12 +1452,29 @@ module MakeGAD(P: sig val prefix: string end) = struct
 
   (* Agent FDU Eval for run and file retriveal *)
 
-   let add_fdu_run_eval sysid tenantid nodeid fduid instanceid func connector =
+  let add_fdu_start_eval sysid tenantid nodeid fduid instanceid func connector =
+    MVar.guarded connector @@ fun connector ->
+    let p = get_fdu_start_eval_path sysid tenantid nodeid fduid instanceid in
+    let cb _ props =
+      match Apero.Properties.get "env" props with
+      | Some env ->
+      let%lwt r = func env in
+      Lwt.return @@ Yaks.Value.StringValue r
+      | None -> Lwt.fail @@ FException (`InternalError (`Msg ("Missing Parameter env in add_fdu_start_eval") ))
+    in
+    let%lwt _ = Yaks.Workspace.register_eval p cb connector.ws in
+    let ls = List.append connector.evals [p] in
+    MVar.return Lwt.return_unit {connector with evals = ls}
+
+  let add_fdu_run_eval sysid tenantid nodeid fduid instanceid func connector =
     MVar.guarded connector @@ fun connector ->
     let p = get_fdu_run_eval_path sysid tenantid nodeid fduid instanceid in
-    let cb _ _ =
-      let%lwt r = func () in
+    let cb _ props =
+      match Apero.Properties.get "env" props with
+      | Some env ->
+      let%lwt r = func env in
       Lwt.return @@ Yaks.Value.StringValue r
+      | None -> Lwt.fail @@ FException (`InternalError (`Msg ("Missing Parameter filename in add_fdu_run_eval") ))
     in
     let%lwt _ = Yaks.Workspace.register_eval p cb connector.ws in
     let ls = List.append connector.evals [p] in
@@ -1490,6 +1514,13 @@ module MakeGAD(P: sig val prefix: string end) = struct
     in
     let%lwt _ = Yaks.Workspace.register_eval p cb connector.ws in
     let ls = List.append connector.evals [p] in
+    MVar.return Lwt.return_unit {connector with evals = ls}
+
+    let remove_fdu_start_eval sysid tenantid nodeid fduid instanceid connector =
+    MVar.guarded connector @@ fun connector ->
+    let p = get_fdu_start_eval_path sysid tenantid nodeid fduid instanceid in
+    let%lwt _ = Yaks.Workspace.unregister_eval p connector.ws in
+    let ls = List.filter (fun e -> e != p ) connector.evals  in
     MVar.return Lwt.return_unit {connector with evals = ls}
 
    let remove_fdu_run_eval sysid tenantid nodeid fduid instanceid connector =
@@ -1544,9 +1575,18 @@ module MakeGAD(P: sig val prefix: string end) = struct
     | (_,v)::_ ->
       Lwt.return (Agent_types.eval_result_of_string (Yaks.Value.to_string v))
 
-  let run_fdu_in_node sysid tenantid instanceid connector =
+  let start_fdu_in_node sysid tenantid instanceid env connector =
     MVar.read connector >>= fun connector ->
-    let s = get_fdu_run_eval_selector sysid tenantid instanceid in
+    let s = get_fdu_start_eval_selector sysid tenantid instanceid env in
+    let%lwt res = Yaks.Workspace.get s connector.ws in
+    match res with
+    | [] ->  Lwt.fail @@ FException (`InternalError (`Msg ("Empty value for start_fdu_in_node") ))
+    | (_,v)::_ ->
+      Lwt.return (Agent_types.eval_result_of_string (Yaks.Value.to_string v))
+
+  let run_fdu_in_node sysid tenantid instanceid env connector =
+    MVar.read connector >>= fun connector ->
+    let s = get_fdu_run_eval_selector sysid tenantid instanceid env in
     let%lwt res = Yaks.Workspace.get s connector.ws in
     match res with
     | [] ->  Lwt.fail @@ FException (`InternalError (`Msg ("Empty value for run_fdu_in_node") ))
@@ -1864,9 +1904,13 @@ module MakeLAD(P: sig val prefix: string end) = struct
   let get_node_fdu_instance_selector nodeid instanceid =
     create_selector [P.prefix; nodeid;  "runtimes"; "*"; "fdu"; "*"; "instances"; instanceid; "info"]
 
-  let get_node_fdu_instance_run_selector nodeid instanceid =
-    (* may add env variables as parameter for the eval *)
-    create_selector [P.prefix; nodeid;  "runtimes"; "*"; "fdu"; "*"; "instances"; instanceid; "run"]
+  let get_node_fdu_instance_start_selector nodeid instanceid env =
+    let e = Printf.sprintf "?(env=%s)" env in
+    create_selector [P.prefix; nodeid;  "runtimes"; "*"; "fdu"; "*"; "instances"; instanceid; "start"; e]
+
+  let get_node_fdu_instance_run_selector nodeid instanceid env =
+    let e = Printf.sprintf "?(env=%s)" env in
+    create_selector [P.prefix; nodeid;  "runtimes"; "*"; "fdu"; "*"; "instances"; instanceid; "run"; e]
 
   let get_node_fdu_instance_log_selector nodeid instanceid =
     create_selector [P.prefix; nodeid;  "runtimes"; "*"; "fdu"; "*"; "instances"; instanceid; "log"]
@@ -1877,6 +1921,9 @@ module MakeLAD(P: sig val prefix: string end) = struct
   let get_node_fdu_instance_file_selector nodeid instanceid filename =
     let f = Printf.sprintf "?(filename=%s)" filename in
     create_selector [P.prefix; nodeid;  "runtimes"; "*"; "fdu"; "*"; "instances"; instanceid; "get"; f]
+
+  let get_node_fdu_instance_start_path nodeid plguinid fduid instanceid =
+    create_path [P.prefix; nodeid;  "runtimes"; plguinid; "fdu"; fduid; "instances"; instanceid; "start"]
 
   let get_node_fdu_instance_run_path nodeid plguinid fduid instanceid =
     create_path [P.prefix; nodeid;  "runtimes"; plguinid; "fdu"; fduid; "instances"; instanceid; "run"]
@@ -2233,9 +2280,18 @@ module MakeLAD(P: sig val prefix: string end) = struct
     let p = get_node_fdu_info_path nodeid pluginid fduid instanceid in
     Yaks.Workspace.remove p connector.ws
 
-  let run_fdu_in_node nodeid instanceid connector =
+  let start_fdu_in_node nodeid instanceid env connector =
     MVar.read connector >>= fun connector ->
-    let s = get_node_fdu_instance_run_selector nodeid instanceid in
+    let s = get_node_fdu_instance_start_selector nodeid instanceid env in
+    let%lwt res = Yaks.Workspace.get s connector.ws in
+    match res with
+    | [] ->  Lwt.fail @@ FException (`InternalError (`Msg ("Empty value for start_fdu_in_node") ))
+    | (_,v)::_ ->
+      Lwt.return (Agent_types.eval_result_of_string (Yaks.Value.to_string v))
+
+  let run_fdu_in_node nodeid instanceid env connector =
+    MVar.read connector >>= fun connector ->
+    let s = get_node_fdu_instance_run_selector nodeid instanceid env in
     let%lwt res = Yaks.Workspace.get s connector.ws in
     match res with
     | [] ->  Lwt.fail @@ FException (`InternalError (`Msg ("Empty value for run_fdu_in_node") ))
