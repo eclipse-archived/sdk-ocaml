@@ -246,6 +246,22 @@ module MakeGAD(P: sig val prefix: string end) = struct
   let get_fdu_file_eval_path sysid tenantid nodeid fduid instanceid =
     create_path [P.prefix; sysid; "tenants"; tenantid; "nodes"; nodeid; "fdu"; fduid; "instances"; instanceid; "get"]
 
+  (* Scheduler *)
+
+  let get_fdu_schedule_eval_selector sysid tenantid nodeid fduid =
+    let f = Printf.sprintf "?(fdu_id=%s)" fduid in
+    create_selector [P.prefix; sysid; "tenants"; tenantid; "nodes"; nodeid; "agent"; "exec"; "schedule"; f]
+
+  let get_fdu_check_eval_selector sysid tenantid nodeid fdu =
+    let f = Printf.sprintf "?(descriptor=%s)" (User.Descriptors.FDU.string_of_descriptor fdu) in
+    create_selector [P.prefix; sysid; "tenants"; tenantid; "nodes"; nodeid; "agent"; "exec"; "check"; f]
+
+  let get_fdu_schedule_eval_path sysid tenantid nodeid =
+    create_path [P.prefix; sysid; "tenants"; tenantid; "nodes"; nodeid; "agent"; "exec"; "schedule"]
+
+  let get_fdu_check_eval_path sysid tenantid nodeid =
+    create_path [P.prefix; sysid; "tenants"; tenantid; "nodes"; nodeid; "agent"; "exec"; "check"]
+
   (* Node Network *)
 
   let get_node_network_port_info_path sysid tenantid nodeid portid =
@@ -1550,6 +1566,62 @@ module MakeGAD(P: sig val prefix: string end) = struct
     let%lwt _ = Yaks.Workspace.unregister_eval p connector.ws in
     let ls = List.filter (fun e -> e != p ) connector.evals  in
     MVar.return Lwt.return_unit {connector with evals = ls}
+
+  (* FDU Scheduler *)
+
+  let add_fdu_schedule_eval sysid tenantid nodeid func connector =
+    MVar.guarded connector @@ fun connector ->
+    let p = get_fdu_schedule_eval_path sysid tenantid nodeid in
+    let cb _ props =
+      let%lwt r = func props in
+      Lwt.return @@ Yaks.Value.StringValue r
+    in
+    let%lwt _ = Yaks.Workspace.register_eval p cb connector.ws in
+    let ls = List.append connector.evals [p] in
+    MVar.return Lwt.return_unit {connector with evals = ls}
+
+
+  let add_fdu_check_eval sysid tenantid nodeid func connector =
+    MVar.guarded connector @@ fun connector ->
+    let p = get_fdu_check_eval_path sysid tenantid nodeid in
+    let cb _ props =
+      let%lwt r = func props in
+      Lwt.return @@ Yaks.Value.StringValue r
+    in
+    let%lwt _ = Yaks.Workspace.register_eval p cb connector.ws in
+    let ls = List.append connector.evals [p] in
+    MVar.return Lwt.return_unit {connector with evals = ls}
+
+  let remove_fdu_schedule_eval sysid tenantid nodeid connector =
+    MVar.guarded connector @@ fun connector ->
+    let p = get_fdu_schedule_eval_path sysid tenantid nodeid in
+    let%lwt _ = Yaks.Workspace.unregister_eval p connector.ws in
+    let ls = List.filter (fun e -> e != p ) connector.evals  in
+    MVar.return Lwt.return_unit {connector with evals = ls}
+
+  let remove_fdu_check_eval sysid tenantid nodeid connector =
+    MVar.guarded connector @@ fun connector ->
+    let p = get_fdu_check_eval_path sysid tenantid nodeid in
+    let%lwt _ = Yaks.Workspace.unregister_eval p connector.ws in
+    let ls = List.filter (fun e -> e != p ) connector.evals  in
+    MVar.return Lwt.return_unit {connector with evals = ls}
+
+
+  let call_multi_node_check sysid tenantid fdu connector =
+    MVar.read connector >>= fun connector ->
+    let s = get_fdu_check_eval_selector sysid tenantid "*" fdu in
+    Yaks.Workspace.get s connector.ws
+    >>= fun res ->
+    match res with
+    | [] -> Lwt.return []
+    | lst ->
+      Lwt_list.filter_map_p (fun (_,v) ->
+          try
+            Lwt.return (Some (Agent_types.eval_result_of_string (Yaks.Value.to_string v)))
+          with
+          | _ ->
+            Lwt.return None
+        ) lst
 
   (* FDU Eval *)
 
