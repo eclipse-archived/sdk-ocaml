@@ -34,6 +34,7 @@ type virtual_network = {
   ?ip_configuration : address_information option;
   ?overlay : bool option;
   ?vni: int option;
+  ?port : int option;
   ?mcast_addr: string option;
   ?vlan_id : int option;
   ?face : string option;

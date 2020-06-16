@@ -2518,29 +2518,40 @@ module MakeLAD(P: sig val prefix: string end) = struct
 
 
   let add_node_bridge nodeid pluginid brname connector =
-    MVar.read connector >>= fun connector ->
-    exec_plugin_eval nodeid pluginid "create_bridge_interface" [("brname", brname)] connector
+    let%lwt res = exec_plugin_eval nodeid pluginid "create_bridge_interface" [("brname", brname)] connector in
+    match res with
+    | Some x -> Lwt.return x
+    | None -> Lwt.fail @@ FException (`InternalError (`Msg ("Empty value for remove_node_vxlan") ))
 
   let remove_node_bridge nodeid pluginid brname connector =
-    MVar.read connector >>= fun connector ->
-    exec_plugin_eval nodeid pluginid "delete_bridge_interface" [("brname", brname)] connector
+    let%lwt res = exec_plugin_eval nodeid pluginid "delete_bridge_interface" [("brname", brname)] connector in
+    match res with
+    | Some x -> Lwt.return x
+    | None -> Lwt.fail @@ FException (`InternalError (`Msg ("Empty value for remove_node_vxlan") ))
 
   let attach_to_node_bridge nodeid pluginid intfname brname connector =
-    MVar.read connector >>= fun connector ->
-    exec_plugin_eval nodeid pluginid "attach_interface_to_bridge" [("intf_name", intfname);("br_name", brname)] connector
+    let%lwt res = exec_plugin_eval nodeid pluginid "attach_interface_to_bridge" [("intf_name", intfname);("br_name", brname)] connector in
+    match res with
+    | Some x -> Lwt.return x
+    | None -> Lwt.fail @@ FException (`InternalError (`Msg ("Empty value for remove_node_vxlan") ))
 
   let detach_from_node_network nodeid pluginid intfname connector =
-    MVar.read connector >>= fun connector ->
-    exec_plugin_eval nodeid pluginid "detach_interface_from_bridge" [("intf_name", intfname)] connector
-
+    let%lwt res = exec_plugin_eval nodeid pluginid "detach_interface_from_bridge" [("intf_name", intfname)] connector in
+    match res with
+    | Some x -> Lwt.return x
+    | None -> Lwt.fail @@ FException (`InternalError (`Msg ("Empty value for remove_node_vxlan") ))
 
   let add_node_vxlan nodeid pluginid vni mcast port master connector =
-    MVar.read connector >>= fun connector ->
-    exec_plugin_eval nodeid pluginid "create_vxlan_interface" [("vni", vni);("mcast_group", mcast);("port", port);("master_intf", master)] connector
+    let%lwt res = exec_plugin_eval nodeid pluginid "create_vxlan_interface" [("vni", vni);("mcast_group", mcast);("port", port);("master_intf", master)] connector in
+    match res with
+    | Some x -> Lwt.return x
+    | None -> Lwt.fail @@ FException (`InternalError (`Msg ("Empty value for remove_node_vxlan") ))
 
   let remove_node_vxlan nodeid pluginid intfname connector =
-    MVar.read connector >>= fun connector ->
-    exec_plugin_eval nodeid pluginid "delete_vxlan_interface" [("intf_name", intfname)] connector
+    let%lwt res = exec_plugin_eval nodeid pluginid "delete_vxlan_interface" [("intf_name", intfname)] connector in
+    match res with
+    | Some x -> Lwt.return x
+    | None -> Lwt.fail @@ FException (`InternalError (`Msg ("Empty value for remove_node_vxlan") ))
 
 end
 
