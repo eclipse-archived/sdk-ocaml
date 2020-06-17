@@ -38,6 +38,7 @@ type virtual_network = {
   ?mcast_addr: string option;
   ?vlan_id : int option;
   ?face : string option;
+  ?br_name : string option;
   }
 
 
