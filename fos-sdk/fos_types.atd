@@ -36,10 +36,12 @@ type virtual_network = {
   is_mgmt : bool;
   ?ip_configuration : address_information option;
   ?overlay : bool option;
+  ?port : int option;
   ?vni: int option;
   ?mcast_addr: string option;
   ?vlan_id : int option;
   ?face : string option;
+  ?br_name : string option;
 }
 
 
