@@ -3,7 +3,9 @@
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 [![Build Status](https://travis-ci.com/eclipse-fog05/sdk-go.svg?branch=devel)](https://travis-ci.com/eclipse-fog05/sdk-ocaml)
 
-# Eclispe fog05 SDK OCaml
+# Eclipse fog05 SDK OCaml
+
+THIS REPOSITORY HAS BEEN ARCHIVED
 
 This repository contains the Eclipse fog05 SDK for Ocaml
 
